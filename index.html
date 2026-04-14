@@ -1,0 +1,488 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>EduPlan — Planejamento Escolar</title>
+
+  <!-- Firebase -->
+  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
+
+  <!-- PDF -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+
+  <!-- Icons -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"/>
+
+  <!-- CSS -->
+  <link rel="stylesheet" href="style.css"/>
+</head>
+<body>
+
+  <!-- ═══════════════════════════════════════════
+       🔐 TELA DE LOGIN
+  ═══════════════════════════════════════════ -->
+  <div id="screen-login" class="screen active">
+    <div class="login-container">
+      <div class="login-logo">
+        <i class="fas fa-chalkboard-teacher"></i>
+        <h1>EduPlan</h1>
+        <p>Planejamento Escolar Inteligente</p>
+      </div>
+      <form id="form-login" class="login-form">
+        <div class="input-group">
+          <i class="fas fa-envelope"></i>
+          <input type="email" id="login-email" placeholder="E-mail" required />
+        </div>
+        <div class="input-group">
+          <i class="fas fa-lock"></i>
+          <input type="password" id="login-password" placeholder="Senha" required />
+        </div>
+        <button type="submit" class="btn-primary btn-full">
+          <i class="fas fa-sign-in-alt"></i> Entrar
+        </button>
+        <p class="login-register">
+          Não tem conta?
+          <a href="#" id="btn-go-register">Cadastre-se</a>
+        </p>
+      </form>
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════════════════
+       📝 TELA DE CADASTRO
+  ═══════════════════════════════════════════ -->
+  <div id="screen-register" class="screen">
+    <div class="login-container">
+      <div class="login-logo">
+        <i class="fas fa-user-plus"></i>
+        <h1>Criar Conta</h1>
+        <p>Preencha os dados abaixo</p>
+      </div>
+      <form id="form-register" class="login-form">
+        <div class="input-group">
+          <i class="fas fa-user"></i>
+          <input type="text" id="register-name" placeholder="Seu nome completo" required />
+        </div>
+        <div class="input-group">
+          <i class="fas fa-envelope"></i>
+          <input type="email" id="register-email" placeholder="E-mail" required />
+        </div>
+        <div class="input-group">
+          <i class="fas fa-lock"></i>
+          <input type="password" id="register-password" placeholder="Senha (mín. 6 caracteres)" required />
+        </div>
+        <button type="submit" class="btn-primary btn-full">
+          <i class="fas fa-user-plus"></i> Cadastrar
+        </button>
+        <p class="login-register">
+          Já tem conta?
+          <a href="#" id="btn-go-login">Voltar ao Login</a>
+        </p>
+      </form>
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════════════════
+       🏠 APP PRINCIPAL (pós-login)
+  ═══════════════════════════════════════════ -->
+  <div id="screen-app" class="screen">
+
+    <!-- SIDEBAR -->
+    <aside class="sidebar" id="sidebar">
+      <div class="sidebar-header">
+        <i class="fas fa-chalkboard-teacher"></i>
+        <span>EduPlan</span>
+      </div>
+      <nav class="sidebar-nav">
+        <a href="#" class="nav-item active" data-page="dashboard">
+          <i class="fas fa-home"></i><span>Dashboard</span>
+        </a>
+        <a href="#" class="nav-item" data-page="planos">
+          <i class="fas fa-book-open"></i><span>Planos de Aula</span>
+        </a>
+        <a href="#" class="nav-item" data-page="atividades">
+          <i class="fas fa-tasks"></i><span>Banco de Atividades</span>
+        </a>
+        <a href="#" class="nav-item" data-page="ia">
+          <i class="fas fa-robot"></i><span>Sugestão IA</span>
+        </a>
+      </nav>
+      <div class="sidebar-footer">
+        <div class="user-info">
+          <i class="fas fa-user-circle"></i>
+          <span id="user-name-display">Professor</span>
+        </div>
+        <button id="btn-logout" class="btn-logout">
+          <i class="fas fa-sign-out-alt"></i> Sair
+        </button>
+      </div>
+    </aside>
+
+    <!-- CONTEÚDO PRINCIPAL -->
+    <main class="main-content">
+
+      <!-- TOPBAR -->
+      <header class="topbar">
+        <button id="btn-toggle-sidebar" class="btn-icon">
+          <i class="fas fa-bars"></i>
+        </button>
+        <h2 id="page-title">Dashboard</h2>
+        <div class="turma-selector">
+          <i class="fas fa-users"></i>
+          <select id="turma-global">
+            <option value="JD1">Jardim I</option>
+            <option value="JD2">Jardim II</option>
+            <option value="1ANO">1º Ano</option>
+            <option value="2ANO">2º Ano</option>
+            <option value="3ANO">3º Ano</option>
+            <option value="4ANO">4º Ano</option>
+            <option value="5ANO">5º Ano</option>
+          </select>
+        </div>
+      </header>
+
+      <!-- ─── PAGE: DASHBOARD ─── -->
+      <section id="page-dashboard" class="page active">
+        <div class="dashboard-grid">
+          <div class="dash-card" data-page="planos">
+            <div class="dash-card-icon blue">
+              <i class="fas fa-book-open"></i>
+            </div>
+            <div class="dash-card-info">
+              <h3 id="count-planos">0</h3>
+              <p>Planos de Aula</p>
+            </div>
+          </div>
+          <div class="dash-card" data-page="atividades">
+            <div class="dash-card-icon green">
+              <i class="fas fa-tasks"></i>
+            </div>
+            <div class="dash-card-info">
+              <h3 id="count-atividades">0</h3>
+              <p>Atividades</p>
+            </div>
+          </div>
+          <div class="dash-card" data-page="ia">
+            <div class="dash-card-icon purple">
+              <i class="fas fa-robot"></i>
+            </div>
+            <div class="dash-card-info">
+              <h3>IA</h3>
+              <p>Sugestão de Atividade</p>
+            </div>
+          </div>
+        </div>
+
+        <div class="dashboard-recent">
+          <h3><i class="fas fa-clock"></i> Últimos Planos</h3>
+          <div id="recent-planos-list" class="recent-list">
+            <p class="empty-msg">Nenhum plano criado ainda.</p>
+          </div>
+        </div>
+      </section>
+
+      <!-- ─── PAGE: PLANOS DE AULA ─── -->
+      <section id="page-planos" class="page">
+        <div class="page-header">
+          <h3>Planos de Aula</h3>
+          <button class="btn-primary" id="btn-novo-plano">
+            <i class="fas fa-plus"></i> Novo Plano
+          </button>
+        </div>
+
+        <!-- Filtros -->
+        <div class="filters">
+          <select id="filter-plano-turma">
+            <option value="">Todas as Turmas</option>
+            <option value="JD1">Jardim I</option>
+            <option value="JD2">Jardim II</option>
+            <option value="1ANO">1º Ano</option>
+            <option value="2ANO">2º Ano</option>
+            <option value="3ANO">3º Ano</option>
+            <option value="4ANO">4º Ano</option>
+            <option value="5ANO">5º Ano</option>
+          </select>
+          <input type="text" id="filter-plano-busca" placeholder="🔍 Buscar plano..."/>
+        </div>
+
+        <div id="planos-list" class="cards-grid">
+          <p class="empty-msg">Nenhum plano encontrado.</p>
+        </div>
+      </section>
+
+      <!-- ─── PAGE: BANCO DE ATIVIDADES ─── -->
+      <section id="page-atividades" class="page">
+        <div class="page-header">
+          <h3>Banco de Atividades</h3>
+          <button class="btn-primary" id="btn-nova-atividade">
+            <i class="fas fa-plus"></i> Nova Atividade
+          </button>
+        </div>
+
+        <!-- Filtros -->
+        <div class="filters">
+          <select id="filter-ativ-turma">
+            <option value="">Todas as Turmas</option>
+            <option value="JD1">Jardim I</option>
+            <option value="JD2">Jardim II</option>
+            <option value="1ANO">1º Ano</option>
+            <option value="2ANO">2º Ano</option>
+            <option value="3ANO">3º Ano</option>
+            <option value="4ANO">4º Ano</option>
+            <option value="5ANO">5º Ano</option>
+          </select>
+          <select id="filter-ativ-area">
+            <option value="">Todas as Áreas</option>
+            <option value="Linguagens">Linguagens</option>
+            <option value="Matemática">Matemática</option>
+            <option value="Ciências">Ciências</option>
+            <option value="História">História</option>
+            <option value="Geografia">Geografia</option>
+            <option value="Arte">Arte</option>
+            <option value="Ed. Física">Ed. Física</option>
+          </select>
+          <input type="text" id="filter-ativ-busca" placeholder="🔍 Buscar atividade..."/>
+        </div>
+
+        <div id="atividades-list" class="cards-grid">
+          <p class="empty-msg">Nenhuma atividade encontrada.</p>
+        </div>
+      </section>
+
+      <!-- ─── PAGE: SUGESTÃO IA ─── -->
+      <section id="page-ia" class="page">
+        <div class="page-header">
+          <h3>Sugestão de Atividade com IA</h3>
+        </div>
+        <div class="ia-container">
+          <div class="ia-form">
+            <div class="form-group">
+              <label>Turma</label>
+              <select id="ia-turma">
+                <option value="JD1">Jardim I</option>
+                <option value="JD2">Jardim II</option>
+                <option value="1ANO">1º Ano</option>
+                <option value="2ANO">2º Ano</option>
+                <option value="3ANO">3º Ano</option>
+                <option value="4ANO">4º Ano</option>
+                <option value="5ANO">5º Ano</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label>Área do Conhecimento</label>
+              <select id="ia-area">
+                <option value="Linguagens">Linguagens</option>
+                <option value="Matemática">Matemática</option>
+                <option value="Ciências da Natureza">Ciências da Natureza</option>
+                <option value="Ciências Humanas">Ciências Humanas</option>
+                <option value="Arte">Arte</option>
+                <option value="Ed. Física">Ed. Física</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label>Tema / Habilidade BNCC</label>
+              <input type="text" id="ia-tema" placeholder="Ex: leitura e escrita, frações, corpo humano..."/>
+            </div>
+            <div class="form-group">
+              <label>Objetivo da Aula</label>
+              <textarea id="ia-objetivo" rows="3" placeholder="Ex: Desenvolver a oralidade e vocabulário dos alunos..."></textarea>
+            </div>
+            <button class="btn-primary btn-full" id="btn-gerar-ia">
+              <i class="fas fa-magic"></i> Gerar Sugestão com IA
+            </button>
+          </div>
+
+          <div class="ia-result" id="ia-result">
+            <div class="ia-result-placeholder">
+              <i class="fas fa-robot"></i>
+              <p>Preencha os campos e clique em <strong>Gerar Sugestão</strong></p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+    </main>
+  </div>
+
+  <!-- ═══════════════════════════════════════════
+       🗂️ MODAL — NOVO/EDITAR PLANO DE AULA
+  ═══════════════════════════════════════════ -->
+  <div id="modal-plano" class="modal-overlay hidden">
+    <div class="modal">
+      <div class="modal-header">
+        <h3 id="modal-plano-title">Novo Plano de Aula</h3>
+        <button class="btn-icon modal-close" data-modal="modal-plano">
+          <i class="fas fa-times"></i>
+        </button>
+      </div>
+      <div class="modal-body">
+        <input type="hidden" id="plano-id"/>
+        <div class="form-row">
+          <div class="form-group">
+            <label>Título do Plano *</label>
+            <input type="text" id="plano-titulo" placeholder="Ex: Aula de Leitura — Semana 1"/>
+          </div>
+          <div class="form-group">
+            <label>Turma *</label>
+            <select id="plano-turma">
+              <option value="JD1">Jardim I</option>
+              <option value="JD2">Jardim II</option>
+              <option value="1ANO">1º Ano</option>
+              <option value="2ANO">2º Ano</option>
+              <option value="3ANO">3º Ano</option>
+              <option value="4ANO">4º Ano</option>
+              <option value="5ANO">5º Ano</option>
+            </select>
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label>Data</label>
+            <input type="date" id="plano-data"/>
+          </div>
+          <div class="form-group">
+            <label>Área do Conhecimento</label>
+            <select id="plano-area">
+              <option value="Linguagens">Linguagens</option>
+              <option value="Matemática">Matemática</option>
+              <option value="Ciências">Ciências</option>
+              <option value="História">História</option>
+              <option value="Geografia">Geografia</option>
+              <option value="Arte">Arte</option>
+              <option value="Ed. Física">Ed. Física</option>
+            </select>
+          </div>
+        </div>
+        <div class="form-group">
+          <label>Habilidade BNCC</label>
+          <input type="text" id="plano-bncc" placeholder="Ex: EF01LP01, EF02MA03..."/>
+        </div>
+        <div class="form-group">
+          <label>Objetivo(s)</label>
+          <textarea id="plano-objetivo" rows="2" placeholder="O que os alunos vão aprender..."></textarea>
+        </div>
+        <div class="form-group">
+          <label>Desenvolvimento / Metodologia</label>
+          <textarea id="plano-desenvolvimento" rows="4" placeholder="Descreva como a aula será conduzida..."></textarea>
+        </div>
+        <div class="form-group">
+          <label>Recursos / Materiais</label>
+          <textarea id="plano-recursos" rows="2" placeholder="Livro, caderno, projetor, cola..."></textarea>
+        </div>
+        <div class="form-group">
+          <label>Avaliação</label>
+          <textarea id="plano-avaliacao" rows="2" placeholder="Como os alunos serão avaliados..."></textarea>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn-secondary modal-close" data-modal="modal-plano">Cancelar</button>
+        <button class="btn-primary" id="btn-salvar-plano">
+          <i class="fas fa-save"></i> Salvar
+        </button>
+        <button class="btn-pdf" id="btn-exportar-pdf">
+          <i class="fas fa-file-pdf"></i> Exportar PDF
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════════════════
+       🗂️ MODAL — NOVA/EDITAR ATIVIDADE
+  ═══════════════════════════════════════════ -->
+  <div id="modal-atividade" class="modal-overlay hidden">
+    <div class="modal">
+      <div class="modal-header">
+        <h3 id="modal-ativ-title">Nova Atividade</h3>
+        <button class="btn-icon modal-close" data-modal="modal-atividade">
+          <i class="fas fa-times"></i>
+        </button>
+      </div>
+      <div class="modal-body">
+        <input type="hidden" id="ativ-id"/>
+        <div class="form-row">
+          <div class="form-group">
+            <label>Título *</label>
+            <input type="text" id="ativ-titulo" placeholder="Nome da atividade"/>
+          </div>
+          <div class="form-group">
+            <label>Turma *</label>
+            <select id="ativ-turma">
+              <option value="JD1">Jardim I</option>
+              <option value="JD2">Jardim II</option>
+              <option value="1ANO">1º Ano</option>
+              <option value="2ANO">2º Ano</option>
+              <option value="3ANO">3º Ano</option>
+              <option value="4ANO">4º Ano</option>
+              <option value="5ANO">5º Ano</option>
+            </select>
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label>Área</label>
+            <select id="ativ-area">
+              <option value="Linguagens">Linguagens</option>
+              <option value="Matemática">Matemática</option>
+              <option value="Ciências">Ciências</option>
+              <option value="História">História</option>
+              <option value="Geografia">Geografia</option>
+              <option value="Arte">Arte</option>
+              <option value="Ed. Física">Ed. Física</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>Habilidade BNCC</label>
+            <input type="text" id="ativ-bncc" placeholder="Ex: EF01LP01"/>
+          </div>
+        </div>
+        <div class="form-group">
+          <label>Descrição</label>
+          <textarea id="ativ-descricao" rows="4" placeholder="Descreva a atividade detalhadamente..."></textarea>
+        </div>
+        <div class="form-group">
+          <label>Materiais</label>
+          <input type="text" id="ativ-materiais" placeholder="Ex: papel, tesoura, lápis de cor..."/>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn-secondary modal-close" data-modal="modal-atividade">Cancelar</button>
+        <button class="btn-primary" id="btn-salvar-atividade">
+          <i class="fas fa-save"></i> Salvar
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════════════════
+       🗑️ MODAL — CONFIRMAÇÃO DE EXCLUSÃO
+  ═══════════════════════════════════════════ -->
+  <div id="modal-confirm" class="modal-overlay hidden">
+    <div class="modal modal-sm">
+      <div class="modal-header">
+        <h3>Confirmar Exclusão</h3>
+        <button class="btn-icon modal-close" data-modal="modal-confirm">
+          <i class="fas fa-times"></i>
+        </button>
+      </div>
+      <div class="modal-body">
+        <p>Tem certeza que deseja excluir este item? Essa ação não pode ser desfeita.</p>
+      </div>
+      <div class="modal-footer">
+        <button class="btn-secondary modal-close" data-modal="modal-confirm">Cancelar</button>
+        <button class="btn-danger" id="btn-confirm-delete">
+          <i class="fas fa-trash"></i> Excluir
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- TOAST -->
+  <div id="toast" class="toast hidden"></div>
+
+  <!-- APP JS -->
+  <script src="app.js"></script>
+</body>
+</html>
